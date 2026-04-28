@@ -181,15 +181,8 @@ Render a specific page of the analyzed contract as PNG (for the evidence viewer)
 
 ---
 
-## Built By
 
-**Soka** · IIT Madras
-Solo build · 24-hour hackathon · Theme: *Economic Empowerment & Education*
-
-Powered by **Claude Sonnet 4.5** for vision and reasoning.
-
----
 
 ## License
 
-MIT — built for impact, free to fork and improve.
+none for now
