@@ -52,10 +52,24 @@ RULES:
 """
 
 
-def _image_to_block(image_path: str) -> dict:
-    """Convert a local image file to an Anthropic image content block."""
-    path = Path(image_path)
+def _file_to_block(file_path: str) -> dict:
+    """Convert a local image or PDF file to an Anthropic content block."""
+    path = Path(file_path)
     suffix = path.suffix.lower().lstrip(".")
+
+    with open(path, "rb") as f:
+        data = base64.standard_b64encode(f.read()).decode("utf-8")
+
+    if suffix == "pdf":
+        return {
+            "type": "document",
+            "source": {
+                "type": "base64",
+                "media_type": "application/pdf",
+                "data": data,
+            },
+        }
+
     media_type = {
         "jpg": "image/jpeg",
         "jpeg": "image/jpeg",
@@ -63,9 +77,6 @@ def _image_to_block(image_path: str) -> dict:
         "webp": "image/webp",
         "gif": "image/gif",
     }.get(suffix, "image/jpeg")
-
-    with open(path, "rb") as f:
-        data = base64.standard_b64encode(f.read()).decode("utf-8")
 
     return {
         "type": "image",
@@ -79,10 +90,10 @@ def _image_to_block(image_path: str) -> dict:
 
 def analyze_contract(image_paths: list[str]) -> dict:
     """
-    Send contract images to Claude vision and return structured JSON.
+    Send contract files (images or PDFs) to Claude and return structured JSON.
     image_paths: list of local file paths, ordered page 1, page 2, ...
     """
-    content = [_image_to_block(p) for p in image_paths]
+    content = [_file_to_block(p) for p in image_paths]
     content.append({"type": "text", "text": "Analyze these contract pages."})
 
     response = client.messages.create(

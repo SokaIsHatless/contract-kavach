@@ -1,5 +1,7 @@
 """Red-flag rules engine. Hardcoded against Indian Emigration Act + ILO frameworks."""
 
+import re
+
 INR_FEE_CAP = 30000  # Indian Emigration Act recruiter fee ceiling
 
 # Rough destination-country monthly minimum wage in INR (approximations for demo)
@@ -15,6 +17,16 @@ DESTINATION_MIN_WAGE_INR = {
 CURRENCY_TO_INR = {  # rough, for demo only
     "INR": 1, "AED": 22.5, "SAR": 22.0, "QAR": 22.5,
     "KWD": 270, "OMR": 215, "BHD": 220, "USD": 83,
+}
+
+CANONICAL_COUNTRY = {
+    "United Arab Emirates": "UAE",
+    "Kingdom of Saudi Arabia": "Saudi Arabia",
+    "KSA": "Saudi Arabia",
+    "State of Qatar": "Qatar",
+    "Sultanate of Oman": "Oman",
+    "Kingdom of Bahrain": "Bahrain",
+    "State of Kuwait": "Kuwait",
 }
 
 
@@ -56,7 +68,7 @@ def evaluate(contract: dict) -> list:
 
     # RF03: Wage below destination minimum
     wage = contract.get("wage")
-    dest = contract.get("destination_country")
+    dest = CANONICAL_COUNTRY.get(contract.get("destination_country"), contract.get("destination_country"))
     if wage and dest in DESTINATION_MIN_WAGE_INR:
         monthly_inr = to_inr(wage["amount"], wage["currency"])
         if wage.get("period") == "daily":
@@ -93,21 +105,20 @@ def evaluate(contract: dict) -> list:
     for d in deductions:
         amt_str = str(d.get("amount_or_percent", ""))
         if "%" in amt_str:
-            try:
-                pct = float(amt_str.replace("%", "").strip())
+            m = re.match(r"(\d+(?:\.\d+)?)\s*%", amt_str)
+            if m:
+                pct = float(m.group(1))
                 if pct > 25:
                     flags.append({
                         "rule_id": "RF05",
                         "severity": "high",
                         "title_en": f"Heavy {d['type']} deduction ({amt_str})",
                         "title_hi": f"{d['type']} में भारी कटौती ({amt_str})",
-                        "explanation_en": f"Deductions over 25% of wage are a common wage-theft pattern.",
-                        "explanation_hi": f"वेतन से 25% से अधिक कटौती सामान्य वेतन-चोरी का तरीका है।",
+                        "explanation_en": "Deductions over 25% of wage are a common wage-theft pattern.",
+                        "explanation_hi": "वेतन से 25% से अधिक कटौती सामान्य वेतन-चोरी का तरीका है।",
                         "evidence_page": d.get("page", 1),
                         "evidence_quote": "",
                     })
-            except ValueError:
-                pass
 
     # RF06: Asymmetric termination
     if contract.get("termination") == "employer_only":
