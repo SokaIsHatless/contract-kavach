@@ -101,7 +101,7 @@ contract-kavach/
 
 ---
 
-## Running Locally
+## How to Run Locally
 
 ### Prerequisites
 - Python 3.11+
