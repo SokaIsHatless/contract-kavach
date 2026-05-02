@@ -4,7 +4,7 @@
 
 An AI safety net for Indian migrant workers signing Gulf employment contracts.
 
-> *Theme: Economic Empowerment & Education*
+
 
 ---
 
